@@ -63,7 +63,6 @@ fn ou_euler_maruyama(
 fn main() -> std::io::Result<()> {
     let file_content = fs::read_to_string("parameters.json")?;
     let json_value: Value = serde_json::from_str(&file_content)?;
-    // Access the "p1" field and deserialize it into the NestedConfig struct
 
     // Extract the "ou" field, return fallback if not found
     let ou_value = match json_value.get("ou") {
