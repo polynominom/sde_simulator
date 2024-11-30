@@ -1,3 +1,5 @@
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use rand_distr::{Distribution, Normal};
 use std::fs::File;
 use std::io::Write;
@@ -11,8 +13,10 @@ fn ou_euler_maruyama(
     tmax: f64,
     n: u32,
     r: u32,
-    seed: f64,
+    seed: u64,
 ) -> Vec<f64> {
+    let mut rand_gen_with_seed = StdRng::seed_from_u64(seed);
+
     let dt = tmax / (n as f64);
     let dt_micro = dt / (r as f64);
 
@@ -28,7 +32,7 @@ fn ou_euler_maruyama(
         let t = t as usize;
         let mut dW: f64 = 0.0;
         for _ in 0..r {
-            dW = dW + normal.sample(&mut rng);
+            dW = dW + normal.sample(&mut rand_gen_with_seed);
         }
         dW = dW * dt_micro.sqrt();
 
@@ -43,8 +47,9 @@ fn main() -> std::io::Result<()> {
     let t_max = 10.0;
     let n = 1000;
     let x0 = 0.0;
+    let seed = 42;
 
-    let x_vec = ou_euler_maruyama(1.0, -1.0, 0.1, x0, t_max, n, 10, 1.0);
+    let x_vec = ou_euler_maruyama(1.0, -1.0, 0.1, x0, t_max, n, 10, seed);
     let mut f = File::create("ou_euler_maruyama.txt")?;
 
     for (pos, x) in x_vec.iter().enumerate() {
