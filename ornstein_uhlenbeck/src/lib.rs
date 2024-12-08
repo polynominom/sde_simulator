@@ -1,14 +1,13 @@
 mod configs;
 
+use wasm_bindgen::prelude::*;
+
 use configs::ou_config::OUConfig;
 use rand::rngs::StdRng;
 use rand::SeedableRng;
 use rand_distr::{Distribution, Normal};
 use serde_json::Value;
 use std::fs;
-use std::fs::File;
-use std::io::Write;
-use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub struct TimeSeries {
@@ -72,31 +71,4 @@ pub fn ou_euler_maruyama(
         timesteps,
         values: x_vec,
     }
-}
-
-fn main() -> std::io::Result<()> {
-    let file_content = fs::read_to_string("parameters.json")?;
-    let json_value: Value = serde_json::from_str(&file_content)?;
-
-    // Extract the "ou" field, return fallback if not found
-    let ou_value = match json_value.get("ou") {
-        Some(value) if value.is_object() => value,
-        _ => {
-            println!("ou field is missing or not a valid object in the JSON file");
-            return Ok(()); // Exit early
-        }
-    };
-    let ou_config: OUConfig = serde_json::from_value(ou_value.clone())?;
-
-    let timeseries = ou_euler_maruyama(
-        ou_config.theta,
-        ou_config.mu,
-        ou_config.sigma,
-        ou_config.x0,
-        ou_config.final_time,
-        ou_config.maximum_timestep,
-        ou_config.micro_timestep,
-        ou_config.seed,
-    );
-    Ok(())
 }

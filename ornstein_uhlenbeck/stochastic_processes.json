@@ -1,0 +1,18 @@
+{ "processes":
+    {
+        "ou":{
+            "euler_maruyama":
+            {
+                "seed": 422,
+                "x0": 10.0,
+                "mu": -1.0,
+                "theta": 1.0,
+                "sigma": 10.0,
+                "maximum_timestep": 1000,
+                "final_time": 10,
+                "micro_timestep": 10
+            }
+
+        }
+    }
+}
