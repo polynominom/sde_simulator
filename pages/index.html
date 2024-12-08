@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OU Euler-Maruyama Plot</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script type="module">
+        import init, { ou_euler_maruyama } from './pkg/ornstein_uhlenbeck.js';
+
+        let chartInstance = null;
+
+        async function updatePlot() {
+            try {
+                console.log('Initializing Wasm module...');
+                await init();
+                console.log('Wasm module initialized');
+
+                const form = document.getElementById('parametersForm');
+                const formData = new FormData(form);
+                const params = Object.fromEntries(formData.entries());
+                params.theta = parseFloat(params.theta);
+                params.mu = parseFloat(params.mu);
+                params.sigma = parseFloat(params.sigma);
+                params.x0 = parseFloat(params.x0);
+                params.tmax = parseFloat(params.tmax);
+                params.n = parseInt(params.n);
+                params.r = parseInt(params.r);
+                params.seed = BigInt(parseInt(params.seed));
+
+                console.log('Calling ou_euler_maruyama with params:', params);
+                const timeSeries = ou_euler_maruyama(
+                    params.theta, params.mu, params.sigma, params.x0,
+                    params.tmax, params.n, params.r, params.seed
+                );
+
+                console.log('Received timeSeries:', timeSeries);
+                plotData(timeSeries);
+            } catch (error) {
+                console.error('Error initializing Wasm module or calling function:', error);
+            }
+        }
+
+        function plotData(timeSeries) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+
+            // Destroy the previous chart instance if it exists
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timeSeries.timesteps,
+                    datasets: [{
+                        label: 'OU Euler-Maruyama',
+                        data: timeSeries.values,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Value'
+                            }
+                        }
+                    },
+                    plugins: {
+                        zoom: {
+                            pan: {
+                                enabled: true,
+                                mode: 'xy'
+                            },
+                            zoom: {
+                                enabled: true,
+                                mode: 'xy'
+                            }
+                        }
+                    },
+                    animation: {
+                     duration: 0
+                    }
+                }
+            });
+        }
+
+        // Expose updatePlot to the global scope
+        window.updatePlot = updatePlot;
+
+        // Initial plot
+        window.addEventListener('load', updatePlot);
+    </script>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Processes</h2>
+        <a href="#" onclick="showForm('ou_euler_maruyama')">OU Euler-Maruyama</a>
+        <!-- Add more processes here -->
+    </div>
+    <div class="container">
+        <form id="parametersForm">
+            <label for="theta">Theta:</label>
+            <input type="number" id="theta" name="theta" step="0.1" value="1" onchange="updatePlot()"><br><br>
+            <label for="mu">Mu:</label>
+            <input type="number" id="mu" name="mu" step="0.1" value="-1.0" onchange="updatePlot()"><br><br>
+            <label for="sigma">Sigma:</label>
+            <input type="number" id="sigma" name="sigma" step="0.1" value="5" onchange="updatePlot()"><br><br>
+            <label for="x0">X0:</label>
+            <input type="number" id="x0" name="x0" step="0.1" value="10.0" onchange="updatePlot()"><br><br>
+            <label for="tmax">Final Time:</label>
+            <input type="number" id="tmax" name="tmax" step="0.1" value="10" onchange="updatePlot()"><br><br>
+            <label for="n">Maximum Timestep:</label>
+            <input type="number" id="n" name="n" value="1000" onchange="updatePlot()"><br><br>
+            <label for="r">Micro Timestep:</label>
+            <input type="number" id="r" name="r" value="10" onchange="updatePlot()"><br><br>
+            <label for="seed">Seed:</label>
+            <input type="number" id="seed" name="seed" value="422" onchange="updatePlot()"><br><br>
+            <button type="button" onclick="updatePlot()">Update Plot</button>
+        </form>
+        <div class="chart-container">
+            <canvas id="myChart"></canvas>
+        </div>
+    </div>
+    <script>
+        function showForm(process) {
+            // Hide all forms
+            document.querySelectorAll('form').forEach(form => form.style.display = 'none');
+            // Show the selected form
+            document.getElementById('parametersForm').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
